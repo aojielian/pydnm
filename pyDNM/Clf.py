@@ -1,9 +1,7 @@
-#!/usr/bin/env python3 
 import pandas as pd
 from sklearn.externals import joblib
 from pyDNM.Backend import get_path
 import os,sys
-
 #from pysam import VariantFile
 import pybedtools
 
@@ -62,14 +60,17 @@ def classify(ofh_tmp=None,ofh=None,keep_fp=None,pseud=None,vcf=None,make_bed=Tru
     clf_chrY_snps = joblib.load(snv_chrY_clf)
     clf_chrX_chrY_indels = joblib.load(indels_chrX_chrY_clf)
     # Make dataframe from input pydnm file
-    df = pd.read_csv(ofh_tmp,sep="\t")
+    df = pd.read_csv(ofh_tmp,sep="\t",dtype={"chrom": str})
     
     # Filter original dataframe
     # df = df.loc[(df["offspring_gt"] != "0/0")] 
-
-
+    
+    df['iid']=df['iid'].astype(str)
+    df_fam['iid']=df_fam['iid'].astype(str)
     df = pd.merge(df, df_fam, on="iid")
-
+    df=df[~df["chrom"].str.contains("GL*")]
+    df["chrom"]=df["chrom"].astype(str)
+    df["chrom"] = df["chrom"].apply(lambda s: "chr" + s if not s.startswith("chr") else s)
     df_autosomal_SNV = df.loc[(df["chrom"] != "chrY") & (df["chrom"] != "chrX") &(df["offspring_gt"]=='0/1') & (df["mother_gt"]=='0/0') &(df["father_gt"]=='0/0') & (df["ref"].str.len() == 1) & (df["alt"].str.len() == 1)]
     df_autosomal_indel = df.loc[(df["chrom"] != "chrY") & (df["chrom"] != "chrX") &(df["offspring_gt"]=='0/1') & (df["mother_gt"]=='0/0') &(df["father_gt"]=='0/0')& ((df["ref"].str.len() != 1) | (df["alt"].str.len() != 1))]
     df_female_X_SNV = df.loc[(df["chrom"] == "chrX") & (df["sex"] == "2") & (df["offspring_gt"]=='0/1') & (df["mother_gt"]=='0/0') &(df["father_gt"]=='0/0') & (df["ref"].str.len() == 1) & (df["alt"].str.len() == 1)]
@@ -105,7 +106,7 @@ def classify(ofh_tmp=None,ofh=None,keep_fp=None,pseud=None,vcf=None,make_bed=Tru
         #ofb = "TEST.bed"
         a = pybedtools.BedTool(ofb)
         b = pybedtools.BedTool(vcf)
-        a_and_b = b.intersect(a, u=True, wa=True, header=True, output=ofh_new+".dnm.vcf")
+        #a_and_b = b.intersect(a, u=True, wa=True, header=True, output=ofh_new+".dnm.vcf")
 
     # if make_vcf: make_output_vcf(vcf,ofh)
 

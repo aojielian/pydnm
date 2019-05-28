@@ -182,7 +182,6 @@ class Vcf():
 
                         is_diploid=False # haploid genotype
                 if is_diploid==False and len(set(alleles)) > 1: continue
-
                 par,dnm = None,None # parent allele, de novo allele
                 for a in alleles:
                     # Diploid
